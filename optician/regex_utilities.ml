@@ -1,12 +1,13 @@
-open Stdlib
+open Core
 open Lang
 open Regexcontext
+open Util
 
 let rec make_regex_safe_in_smaller_context
     (rc_smaller:RegexContext.t)
     (rc_larger:RegexContext.t)
   : Regex.t -> Regex.t =
-  fold_until_fixpoint
+  let step =
     (Regex.fold
        ~empty_f:Regex.zero
        ~concat_f:Regex.make_times
@@ -19,10 +20,16 @@ let rec make_regex_safe_in_smaller_context
                RegexContext.lookup_exn rc_larger v
              | Some _ -> Regex.make_var v
            end))
+  in
+  let rec fix (r:Regex.t) : Regex.t =
+    let r' = step r in
+    if Poly.(r' = r) then r else fix r'
+  in
+  fix
 
 let simplify_regex : Regex.t -> Regex.t =
   let maximally_factor_regex : Regex.t -> Regex.t =
-    Semiring.maximally_factor_element
+    Algebra.Semiring.maximally_factor_element
       regex_semiring
   in
   let rec clean_regex (r:Regex.t) : Regex.t =
@@ -55,7 +62,7 @@ let simplify_regex : Regex.t -> Regex.t =
     end
   in
 
-  let merge_concated_bases : Regex.t -> Regex.t =
+  let merge_bases (r_in:Regex.t) : Regex.t =
     let rec retrieve_rightmost_concated_base
         (r:Regex.t)
       : (Regex.t option * string option) =
@@ -103,14 +110,16 @@ let simplify_regex : Regex.t -> Regex.t =
         | _ -> r
       end
     in
-
-    Regex.apply_at_every_level merge_concated_bases_current_level
+    Regex.apply_at_every_level merge_concated_bases_current_level r_in
   in
 
-  fold_until_fixpoint
-    (merge_concated_bases
-     % clean_regex
-     % maximally_factor_regex)
+  let rec fix_simpl (r:Regex.t) : Regex.t =
+    let r1 = merge_bases r in
+    let r2 = clean_regex r1 in
+    let r3 = maximally_factor_regex r2 in
+    if Poly.(r3 = r) then r3 else fix_simpl r3
+  in
+  fix_simpl
 
 
 let rec iteratively_deepen

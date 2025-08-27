@@ -1,4 +1,4 @@
-open Stdlib
+open Core
 open OUnit2
 
 let assert_equal

@@ -62,7 +62,7 @@ type chunkmap = ((int * int) * cat) TmImA.t
 let empty = ("", 0, 0)
 
 let of_string s =
-  Bytes.copy s, 0, String.length s
+  s, 0, String.length s
 
 let to_attmp s :attmp =
   [[]], s
@@ -239,10 +239,10 @@ let dist_limit_aux limit s t =
 
 let rev_s s =
   let n = String.length s in
-  let t = String.make n '\000' in
+  let t = Bytes.create n in
   let rec loop x y =
     if x >= n
-    then t
+    then Bytes.unsafe_to_string t
     else (
       Bytes.set t x s.[y];
       loop (succ x) (pred y)

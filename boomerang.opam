@@ -7,5 +7,5 @@ bug-reports: "https://github.com/boomerang-lang/boomerang"
 dev-repo: "https://github.com/boomerang-lang/boomerang"
 license: "None"
 build: [
-  ["jbuilder" "build" "--only" "boomerang" "--root" "." "-j" jobs "@install"]
+  ["dune" "build" "-p" name "-j" jobs]
 ]

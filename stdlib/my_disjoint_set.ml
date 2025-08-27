@@ -13,7 +13,7 @@ struct
 
   let empty = D.empty
 
-  let rec find_representative (ds:t) (e:'a) : 'a =
+  let rec find_representative (ds:t) (e:elt) : elt =
     begin match D.lookup ds e with
       | None -> e
       | Some pref ->
@@ -25,7 +25,7 @@ struct
   let union_elements (ds:t) (e1:elt) (e2:elt) : t =
     let e1rep = find_representative ds e1 in
     let e2rep = find_representative ds e2 in
-    if (e1rep = e2rep) then
+    if is_equal (DA.compare e1rep e2rep) then
       ds
     else
       D.insert ds e1rep (ref e2rep)

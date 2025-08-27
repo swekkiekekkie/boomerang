@@ -1,0 +1,3 @@
+(library
+ (name lbase)
+ (libraries bbase hbase ubase))

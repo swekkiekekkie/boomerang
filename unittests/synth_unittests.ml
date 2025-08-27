@@ -1,6 +1,5 @@
-open Stdlib
+open Core
 open OUnit2
-open Ounit_extensions
 
 let test_abc _ =
   assert_equal

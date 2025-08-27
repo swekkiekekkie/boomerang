@@ -1,0 +1,6 @@
+(ocamllex src2tex)
+
+(executables
+ (modes byte exe)
+ (names src2f src2tex wrap)
+ (libraries hbase unix))

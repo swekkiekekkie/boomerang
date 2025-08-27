@@ -74,7 +74,20 @@ struct
           ~f:product_splitter
           sum_product_list_list
       in
-      let grouped_assoc_list = group_by_keys product_keyed_sum_list in
+      let grouped_assoc_list =
+        let rec add acc k v =
+          match acc with
+          | [] -> [(k,[v])]
+          | (k',vs)::t ->
+            if Poly.(k' = k) then (k,(v::vs))::t
+            else (k',vs)::(add t k v)
+        in
+        List.fold_left
+          ~f:(fun acc (k,vs) -> add acc k vs)
+          ~init:[]
+          product_keyed_sum_list
+        |> List.map ~f:(fun (k,vs) -> (k,List.rev vs))
+      in
       let keyed_sum_list =
         List.map
           ~f:(fun (k,all) ->
@@ -94,7 +107,7 @@ struct
         List.map
           ~f:(fun (k,al) ->
               let factored_side = combine_nonempty_list_exn S.make_plus al in
-              if factored_side = S.one then
+              if Poly.(factored_side = S.one) then
                 k
               else
                 product_combiner
@@ -104,17 +117,27 @@ struct
       in
       combine_nonempty_list_exn S.make_plus ringed_list
     in
-    Fn.compose
-      (fold_until_fixpoint
-         (S.apply_at_every_level
-            (maximally_factor_current_level
-               (Fn.compose swap_double split_by_last_exn)
-               (Fn.flip S.make_times))))
-      (fold_until_fixpoint
-         (S.apply_at_every_level
-            (maximally_factor_current_level
-               split_by_first_exn
-               S.make_times)))
+    let fsplit : S.t list -> (S.t * S.t list) =
+      (Fn.compose swap_double split_by_last_exn)
+    in
+    let fcomb : S.t -> S.t -> S.t = Fn.flip S.make_times in
+    let flevel : S.t -> S.t =
+      (maximally_factor_current_level fsplit fcomb)
+    in
+    let rec fixpoint (f:S.t -> S.t) (x:S.t) : S.t =
+      let x' = f x in
+      if Poly.(x' = x) then x else fixpoint f x'
+    in
+    let (f1 : S.t -> S.t) =
+      (fun (x:S.t) -> fixpoint (S.apply_at_every_level flevel) x)
+    in
+    let flevel2 : S.t -> S.t =
+      (maximally_factor_current_level split_by_first_exn S.make_times)
+    in
+    let (f2 : S.t -> S.t) =
+      (fun (x:S.t) -> fixpoint (S.apply_at_every_level flevel2) x)
+    in
+    Fn.compose f1 f2
 end
 
 module StarSemiring =
@@ -219,13 +242,13 @@ module Permutation = struct
       failwith "Not Bijection"
     else
       let sorted_by_second = List.sort
-          ~cmp:(fun (_,x) (_,y) -> x - y)
+          ~compare:(fun (_,x) (_,y) -> x - y)
           mapping in
       List.map ~f:(fun (x,_) -> x) sorted_by_second
 
   let create_from_doubles_unsafe (mapping:(int*int) list) : t =
     let sorted_by_second = List.sort
-        ~cmp:(fun (_,x) (_,y) -> x - y)
+        ~compare:(fun (_,x) (_,y) -> x - y)
         mapping in
     List.map ~f:(fun (x,_) -> x) sorted_by_second
 
@@ -248,7 +271,7 @@ module Permutation = struct
         | [] -> Some (create_from_doubles required_parts, guessed_parts)
         | hl::tl ->
           let choice = split_by_first_satisfying
-              (fun x -> not (List.mem ~equal:(=) invalid_parts (hl,x)))
+              (fun x -> not (List.mem ~equal:(fun (a,b) (c,d) -> Int.equal a c && Int.equal b d) invalid_parts (hl,x)))
               unused_partsr in
           begin match choice with
             | None -> continuation None
@@ -279,7 +302,7 @@ module Permutation = struct
           end
       end in
     if (List.exists
-          ~f:(fun invalid_part -> List.mem ~equal:(=) required_parts invalid_part)
+          ~f:(fun invalid_part -> List.mem ~equal:(fun (a,b) (c,d) -> Int.equal a c && Int.equal b d) required_parts invalid_part)
           invalid_parts) then
       None
     else
@@ -323,7 +346,7 @@ module Permutation = struct
     in
     let sorted_doubles =
       List.sort
-        ~cmp:(fun (x1,_) (x2,_) -> x1 - x2)
+        ~compare:(fun (x1,_) (x2,_) -> x1 - x2)
         mapped_doubles
     in
     List.map ~f:snd sorted_doubles
@@ -346,9 +369,9 @@ module Permutation = struct
     let p_init =
       List.map
         ~f:(IntIntDict.lookup_exn index_to_element)
-        (List.sort ~cmp:Int.compare s)
+        (List.sort ~compare:Int.compare s)
     in
-    let subset_positions = List.sort ~cmp:Int.compare p_init in
+    let subset_positions = List.sort ~compare:Int.compare p_init in
     let elements_and_positions =
       List.mapi
         ~f:(fun i x -> (x,i))
@@ -415,7 +438,7 @@ module Permutation = struct
   let apply_inverse_to_list_exn (permutation:t) (l:'a list) : 'a list =
     let permutation_list_combo = List.zip_exn permutation l in
     let sorted_by_perm = List.sort
-        ~cmp:(fun (p1,_) (p2,_) -> p1 - p2)
+        ~compare:(fun (p1,_) (p2,_) -> p1 - p2)
         permutation_list_combo in
     let (_,l') = List.unzip sorted_by_perm in
     l'

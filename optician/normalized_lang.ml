@@ -1,5 +1,7 @@
-open Stdlib
+open Core
 open Lang
+open String_utilities
+open Util
 
 
 (**** Exampled Regex {{{ *****)
@@ -25,7 +27,7 @@ let extract_iterations_consumed (er:exampled_regex) : int list list =
 let took_regex (er:exampled_regex)
     (iteration:int list) : bool =
   let ill = extract_iterations_consumed er in
-  List.mem ~equal:(=) ill iteration
+  List.mem ~equal:(List.equal Int.equal) ill iteration
 
 let rec extract_string (er:exampled_regex) (iteration:int list)
   : string =
@@ -40,19 +42,19 @@ let rec extract_string (er:exampled_regex) (iteration:int list)
         extract_string er1 iteration
       else
         extract_string er2 iteration
-    | ERegExStar (er',_) ->
+    | ERegExStar (r',ill) ->
         let valid_iterations =
           List.rev
             (List.filter
-              ~f:(fun it -> List.tl_exn it = iteration)
-              (extract_iterations_consumed er')) in
+              ~f:(fun it -> Poly.(List.tl_exn it = iteration))
+              ill) in
         String.concat
           (List.map
-            ~f:(extract_string er')
+            ~f:(extract_string r')
             valid_iterations)
     | ERegExVariable (_,sl,ill) ->
         let dat_opt = List.findi
-          ~f:(fun _ il -> il = iteration)
+          ~f:(fun _ il -> Poly.(il = iteration))
           ill in
         begin match dat_opt with
         | None -> failwith "im horrible"
@@ -157,13 +159,13 @@ list * (int list list)
 and ordered_exampled_dnf_regex = (ordered_exampled_clause * int) list list
 
 let rec compare_exampled_atoms (a1:exampled_atom) (a2:exampled_atom) :
-  comparison =
+  Util.comparison =
     begin match (a1,a2) with
       | (EAVariable (s1,_,_,el1,_), EAVariable (s2,_,_,el2,_)) ->
         let cmp = Id.compare s1 s2 in
-        if (is_equal cmp) then
-          ordered_partition_order
-            compare
+        if (Util.is_equal cmp) then
+          compare_list
+            ~cmp:String.compare
             el1
             el2
         else
@@ -174,17 +176,17 @@ let rec compare_exampled_atoms (a1:exampled_atom) (a2:exampled_atom) :
 
 and compare_exampled_clauses ((atoms1,_,ints1):exampled_clause)
                              ((atoms2,_,ints2):exampled_clause)
-  : comparison =
+  : Util.comparison =
   let cmp = ordered_partition_order compare_exampled_atoms atoms1 atoms2 in
-  if (is_equal cmp) then
-    ordered_partition_order
-      (fun x y -> (compare x y))
+  if (Util.is_equal cmp) then
+    compare_list
+      ~cmp:(compare_list ~cmp:Int.compare)
       ints1
       ints2
   else
     cmp
 
-and compare_exampled_dnf_regexs ((r1,_):exampled_dnf_regex) ((r2,_):exampled_dnf_regex) : comparison =
+and compare_exampled_dnf_regexs ((r1,_):exampled_dnf_regex) ((r2,_):exampled_dnf_regex) : Util.comparison =
   ordered_partition_order
     compare_exampled_clauses
       r1
@@ -192,13 +194,13 @@ and compare_exampled_dnf_regexs ((r1,_):exampled_dnf_regex) ((r2,_):exampled_dnf
 
 let rec compare_ordered_exampled_atoms (a1:ordered_exampled_atom)
                                        (a2:ordered_exampled_atom)
-                                     : comparison =
+                                     : Util.comparison =
     begin match (a1,a2) with
       | (OEAVar (s1,_,_,el1), OEAVar (s2,_,_,el2)) ->
-        let cmp = compare s1 s2 in
-        if is_equal cmp then
+        let cmp = Id.compare s1 s2 in
+        if Util.is_equal cmp then
           compare_list
-            ~cmp:compare
+            ~cmp:String.compare
             el1
             el2
         else
@@ -211,23 +213,23 @@ let rec compare_ordered_exampled_atoms (a1:ordered_exampled_atom)
 and compare_ordered_exampled_clauses
         ((atoms_partitions1,_,ints1):ordered_exampled_clause)
         ((atoms_partitions2,_,ints2):ordered_exampled_clause)
-  : comparison =
+  : Util.comparison =
   let cmp =
     ordered_partition_dictionary_order
       compare_ordered_exampled_atoms
       atoms_partitions1
       atoms_partitions2
   in
-  if is_equal cmp then
+  if Util.is_equal cmp then
     compare_list
-      ~cmp:(compare)
+      ~cmp:(compare_list ~cmp:Int.compare)
       ints1
       ints2
   else
     cmp
 
 and compare_ordered_exampled_dnf_regexs (r1:ordered_exampled_dnf_regex)
-  (r2:ordered_exampled_dnf_regex) : comparison =
+  (r2:ordered_exampled_dnf_regex) : Util.comparison =
     ordered_partition_dictionary_order
       compare_ordered_exampled_clauses
         r1
@@ -245,7 +247,7 @@ and to_ordered_exampled_clause ((atoms,strings,exnums):exampled_clause) : ordere
     sort_and_partition_with_indices
       compare_ordered_exampled_atoms
       ordered_atoms in
-  (ordered_ordered_atoms,strings,(List.sort ~cmp:compare exnums))
+  (ordered_ordered_atoms,strings,(List.sort ~compare:(compare_list ~cmp:Int.compare) exnums))
 
 and to_ordered_exampled_dnf_regex ((r,_):exampled_dnf_regex)
         : ordered_exampled_dnf_regex =
@@ -261,9 +263,9 @@ type atom_lens =
   | AtomLensIterate of dnf_lens
   | AtomLensVariable of Lens.t
 
-and clause_lens = atom_lens list * Permutation.t * string list * string list
+and clause_lens = atom_lens list * Algebra.Permutation.t * string list * string list
 
-and dnf_lens = clause_lens list * Permutation.t
+and dnf_lens = clause_lens list * Algebra.Permutation.t
 
 let rec dnf_lens_to_string ((clause_lenses, permutation):dnf_lens) : string =
   let atom_lens_to_string (a:atom_lens) : string =
@@ -278,7 +280,7 @@ let rec dnf_lens_to_string ((clause_lenses, permutation):dnf_lens) : string =
       )
       ^ " , " ^
       paren (
-        Permutation.show permutation
+        Algebra.Permutation.show permutation
       )
       ^ " , " ^
       paren (
@@ -295,26 +297,26 @@ let rec dnf_lens_to_string ((clause_lenses, permutation):dnf_lens) : string =
   )
   ^ " , " ^
   paren (
-    Permutation.show permutation
+    Algebra.Permutation.show permutation
   )
 
 let rec compare_dnf_lens
     (dl1:dnf_lens)
     (dl2:dnf_lens)
-  : comparison =
+  : Util.comparison =
   pair_compare
     (compare_list ~cmp:compare_clause_lens)
-    Permutation.compare
+    Algebra.Permutation.compare
     dl1
     dl2
 
 and compare_clause_lens
     (cl1:clause_lens)
     (cl2:clause_lens)
-  : comparison =
+  : Util.comparison =
   quad_compare
     (compare_list ~cmp:compare_atom_lens)
-    Permutation.compare
+    Algebra.Permutation.compare
     (compare_list ~cmp:compare_string)
     (compare_list ~cmp:compare_string)
     cl1
@@ -323,7 +325,7 @@ and compare_clause_lens
 and compare_atom_lens
     (al1:atom_lens)
     (al2:atom_lens)
-  : comparison =
+  : Util.comparison =
   begin match (al1,al2) with
     | (AtomLensIterate dl1, AtomLensIterate dl2) ->
       compare_dnf_lens dl1 dl2
@@ -382,18 +384,18 @@ let singleton_atom (a:atom) : dnf_regex =
   [([a],["";""])]
 
 
-let rec compare_atoms (a1:atom) (a2:atom) : comparison =
+let rec compare_atoms (a1:atom) (a2:atom) : Util.comparison =
   begin match (a1,a2) with
-  | (AVar s1, AVar s2) -> compare s1 s2
+  | (AVar s1, AVar s2) -> Id.compare s1 s2
   | (AVar  _, AStar         _) -> -1
   | (AStar         _, AVar  _) -> 1
   | (AStar        r1, AStar        r2) -> compare_dnf_regexs r1 r2
   end
 
-and compare_clauses ((atoms1,_):clause) ((atoms2,_):clause) : comparison =
+and compare_clauses ((atoms1,_):clause) ((atoms2,_):clause) : Util.comparison =
   ordered_partition_order compare_atoms atoms1 atoms2
 
-and compare_dnf_regexs (r1:dnf_regex) (r2:dnf_regex) : comparison =
+and compare_dnf_regexs (r1:dnf_regex) (r2:dnf_regex) : Util.comparison =
   ordered_partition_order compare_clauses r1 r2
 
 

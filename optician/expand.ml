@@ -1,5 +1,7 @@
-open Stdlib
+open Core
 open Lang
+open Util
+open My_set
 open Lenscontext
 open Regexcontext
 open Synth_structs
@@ -39,13 +41,13 @@ let star_depth_regex_fold
 (***** }}} *****)
 
 (**** GetSets {{{ *****)
-module IdSet = SetOf(Id)
+module IdSet = My_set.SetOf(Id)
 
 module IntSet = SetOf(IntModule)
 
 module IdIntSet = SetOf(PairOf(Id)(IntModule))
 
-module IdToIntSetDict = DictOf(Id)(IntSet)
+module IdToIntSetDict = My_dict.DictOf(Id)(IntSet)
 
 let get_current_set
     (lc:LensContext.t)
@@ -226,7 +228,7 @@ let rec reveal
   : (Regex.t * int) list =
   begin match r with
     | Regex.RegExVariable v' ->
-      if get_rep_var lc v' = v && star_depth = 0 then
+      if Poly.(get_rep_var lc v' = v) && star_depth = 0 then
         [(Regex.RegExVariable v',0)]
       else
         begin match RegexContext.lookup_for_expansion_exn rc v' with
@@ -305,8 +307,8 @@ let expand_once
     (qe:QueueElement.t)
   : QueueElement.t list =
   let expanders =
-    [StarSemiring.left_unfold_all_stars regex_star_semiring
-    ;StarSemiring.right_unfold_all_stars regex_star_semiring
+    [Algebra.StarSemiring.left_unfold_all_stars regex_star_semiring
+    ;Algebra.StarSemiring.right_unfold_all_stars regex_star_semiring
     ;Regex.applies_for_every_applicable_level
         (fun r ->
            option_bind

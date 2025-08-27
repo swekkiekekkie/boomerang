@@ -546,7 +546,7 @@ struct
   (* TODO:
    * Write a function to test if a given key is in our dictionary *)
   let member (d: t) (k: key) : bool =
-    lookup d k <> None
+    Option.is_some (lookup d k)
 
   (* TODO:
    * Write a function that removes any (key,value) pair from our 
@@ -614,8 +614,8 @@ struct
     let comparer = (pair_compare compare_key V.compare) in
     compare_list
       ~cmp:comparer
-      (List.sort ~cmp:comparer (as_kvp_list d1))
-      (List.sort ~cmp:comparer (as_kvp_list d2))
+      (List.sort ~compare:comparer (as_kvp_list d1))
+      (List.sort ~compare:comparer (as_kvp_list d2))
 
   let merge
       ~combiner:(combiner:value -> value -> 'a)

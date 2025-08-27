@@ -1,4 +1,5 @@
-open Stdlib
+open Core
+open Util
 open Printf
 
 
@@ -123,9 +124,9 @@ struct
       ~upward_or:(upward_or:'b -> 'a -> 'a -> 'a)
       ~upward_star:(upward_star:'b -> 'a -> 'a)
       ~upward_var:(upward_var:'b -> Id.t -> 'a)
-      ?downward_concat:(downward_concat:'b -> 'b = ident)
-      ?downward_or:(downward_or:'b -> 'b = ident)
-      ?downward_star:(downward_star:'b -> 'b = ident)
+      ?downward_concat:(downward_concat:'b -> 'b = Fn.id)
+      ?downward_or:(downward_or:'b -> 'b = Fn.id)
+      ?downward_star:(downward_star:'b -> 'b = Fn.id)
     : t -> 'a =
     let rec fold_downward_upward_internal
         (downward_acc:'b)
@@ -155,7 +156,7 @@ struct
           upward_var downward_acc v
       end
     in
-    fold_downward_upward_internal init
+    fun r -> fold_downward_upward_internal init r
 
   let fold
       ~empty_f:(empty_f:'a)
@@ -261,16 +262,20 @@ struct
 		  match Char.of_int index with
 		  | None -> failwith "Bad Index Bro"
 		  | Some c -> c
-	  in let helper ((m, n) : int * int) : t =
-		     let rec innerHelper (i : int) (r : t) : t =
-			     if i > n then r else
-				     innerHelper (i + 1) (RegExOr(r, RegExBase (String.of_char (charOf i))))
-		     in if n < m then failwith "Malformed Character Set" else
-		     if n = m then RegExBase (String.of_char (charOf m)) else
-			     innerHelper (m + 1) (RegExBase (String.of_char (charOf m)))
 	  in
-	  List.fold_left l ~init: RegExEmpty
-		  ~f: (fun r x -> if r = RegExEmpty then helper x else RegExOr (r, (helper x)))
+	  let string_of_char (c:char) : string = String.make 1 c in
+	  let add_range (acc:t) ((m, n) : int * int) : t =
+		  let rec build (i:int) (r:t) : t =
+			  if i > n then r
+			  else
+				  let base = RegExBase (string_of_char (charOf i)) in
+				  let r' = match r with RegExEmpty -> base | _ -> RegExOr (r, base) in
+				  build (i + 1) r'
+		  in
+		  if n < m then failwith "Malformed Character Set"
+		  else build m acc
+	  in
+	  List.fold_left ~init:RegExEmpty ~f:add_range l
 
   let iterate_n_times (n : int) (r : t) : t =
 	  let rec helper (index : int) (temp : t) : t =
@@ -282,11 +287,10 @@ struct
 		  if index > n then temp else
 			  helper (index + 1) (RegExOr(temp, iterate_n_times index r)) in
 	  if n < m then RegExEmpty else helper (m + 1) (iterate_n_times m r)
-
 end
 
-let regex_semiring = (module Regex : Semiring.Sig with type t = Regex.t)
-let regex_star_semiring = (module Regex : StarSemiring.Sig with type t = Regex.t)
+let regex_semiring = (module Regex : Algebra.Semiring.Sig with type t = Regex.t)
+let regex_star_semiring = (module Regex : Algebra.StarSemiring.Sig with type t = Regex.t)
 (***** }}} *****)
 
 
@@ -366,7 +370,7 @@ struct
     end
 
   let rec is_sublens (sublens:t) (suplens:t) : bool =
-    if sublens = suplens then
+    if Poly.(sublens = suplens) then
       true
     else
       begin match suplens with
@@ -481,8 +485,8 @@ struct
     fold_internal l
 end
 
-let lens_semiring = (module Lens : Semiring.Sig with type t = Lens.t)
-let lens_star_semiring = (module Lens : StarSemiring.Sig with type t = Lens.t)
+let lens_semiring = (module Lens : Algebra.Semiring.Sig with type t = Lens.t)
+let lens_star_semiring = (module Lens : Algebra.StarSemiring.Sig with type t = Lens.t)
 
 (***** }}} *****)
 

@@ -1,4 +1,4 @@
-open Stdlib
+open Core
 open Regexcontext
 open Lenscontext
 open Lang
@@ -15,7 +15,7 @@ let rec lens_putl_internal
   : string =
   begin match (l,er) with
     | (Lens.LensConst (s1,s2), ERegExBase (s2',_)) ->
-        if s2 = s2' then
+        if Poly.(s2 = s2') then
           s1
         else
           failwith "bad typecheck const"
@@ -56,8 +56,8 @@ let rec lens_putl_internal
         let valid_iterations =
           List.rev
             (List.filter
-              ~f:(fun it -> List.tl_exn it = iteration)
-              (extract_iterations_consumed er')) in
+              ~f:(fun it -> Poly.(List.tl_exn it = iteration))
+              (extract_example_list er')) in
         String.concat
           (List.map
             ~f:(lens_putl_internal rc lc l' er')
@@ -87,7 +87,7 @@ let rec lens_putl_internal
           (extract_reversed_concat_list er (List.length ls))
       in
       let permed_concat_list =
-        Permutation.apply_inverse_to_list_exn
+        Algebra.Permutation.apply_inverse_to_list_exn
           p
           concat_list
       in
@@ -109,7 +109,7 @@ and lens_putr_internal
   : string =
   begin match (l,er) with
     | (Lens.LensConst (s1,s2), ERegExBase (s1',_)) ->
-        if s1 = s1' then
+        if Poly.(s1 = s1') then
           s2
         else
           failwith "bad typecheck const"
@@ -150,8 +150,8 @@ and lens_putr_internal
         let valid_iterations =
           List.rev
             (List.filter
-              ~f:(fun it -> List.tl_exn it = iteration)
-              (extract_iterations_consumed er')) in
+              ~f:(fun it -> Poly.(List.tl_exn it = iteration))
+              (extract_example_list er')) in
         String.concat
           (List.map
             ~f:(lens_putr_internal rc lc l' er')
@@ -182,7 +182,7 @@ and lens_putr_internal
       in
       let er_l_list = List.zip_exn concat_list ls in
       let permed_er_l_list =
-        Permutation.apply_to_list_exn
+        Algebra.Permutation.apply_to_list_exn
           p
           er_l_list
       in

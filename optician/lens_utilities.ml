@@ -1,8 +1,10 @@
-open Stdlib
+open Core
 open Lang
 open Regexcontext
 open Regex_utilities
 open Lenscontext
+open String_utilities
+open Util
 
 let retrieve_transitive_referenced_lenses
     (lc:LensContext.t)
@@ -129,7 +131,7 @@ let distribute_inverses : Lens.t -> Lens.t =
           | Lens.LensVariable _ ->
             l
           | Lens.LensPermute (p,ls) ->
-            Lens.LensPermute (Permutation.inverse p, ls)
+            Lens.LensPermute (Algebra.Permutation.inverse p, ls)
         end
       | _ -> l
     end
@@ -139,7 +141,7 @@ let distribute_inverses : Lens.t -> Lens.t =
 
 let simplify_lens : Lens.t -> Lens.t =
   let maximally_factor_lens : Lens.t -> Lens.t =
-    Semiring.maximally_factor_element
+    Algebra.Semiring.maximally_factor_element
       lens_semiring
   in
   let distribute_identities (l:Lens.t) : Lens.t =
@@ -260,7 +262,7 @@ let simplify_lens : Lens.t -> Lens.t =
             let l' = merge_ored_beneath l' in
             (Some (Lens.LensIterate l'), None)
           | Lens.LensIdentity r ->
-            (None, if r = Regex.RegExEmpty then None else Some r)
+            (None, if Poly.(r = Regex.RegExEmpty) then None else Some r)
           | Lens.LensInverse l' ->
             let l' = merge_ored_beneath l' in
             (Some (Lens.LensInverse l'), None)
@@ -305,7 +307,7 @@ let simplify_lens : Lens.t -> Lens.t =
     let identify_identity_consts_current_level (l:Lens.t) : Lens.t =
       begin match l with
         | Lens.LensConst(s1,s2) ->
-          if s1 = s2 then
+          if Poly.(s1 = s2) then
             Lens.LensIdentity (Regex.RegExBase s1)
           else
             l
@@ -352,7 +354,7 @@ let simplify_lens : Lens.t -> Lens.t =
 
   let separate_emptystring_consts : Lens.t -> Lens.t =
     let string_to_singlecharstring_list (s:string) : string list =
-      let cl = string_to_char_list s in
+      let cl = Util.string_to_char_list s in
       List.map ~f:Char.to_string cl
     in
     let separate_emptystring_consts_current_level (l:Lens.t) : Lens.t =
@@ -360,7 +362,7 @@ let simplify_lens : Lens.t -> Lens.t =
         | Lens.LensConst("","") -> l
         | Lens.LensConst("",s2) ->
           let sl = string_to_singlecharstring_list s2 in
-          let (fs,ls) = split_by_last_exn sl in
+          let (fs,ls) = Util.split_by_last_exn sl in
           List.fold_right
             ~f:(fun s acc ->
                 Lens.LensConcat(Lens.LensConst("",s),acc))
@@ -368,7 +370,7 @@ let simplify_lens : Lens.t -> Lens.t =
             fs
         | Lens.LensConst(s1,"") ->
           let sl = string_to_singlecharstring_list s1 in
-          let (fs,ls) = split_by_last_exn sl in
+          let (fs,ls) = Util.split_by_last_exn sl in
           List.fold_right
             ~f:(fun s acc ->
                 Lens.LensConcat(Lens.LensConst(s,""),acc))
@@ -434,18 +436,22 @@ let simplify_lens : Lens.t -> Lens.t =
   in
 
   let perform_cleanups =
-    distribute_inverses
-    % identify_identity_consts
-    % merge_concated_consts
-    % remove_identity_identities
-    % clean_identities
-    % distribute_identities
-    % maximally_factor_lens
-    % separate_emptystring_consts
+    fun l ->
+      l
+      |> distribute_inverses
+      |> identify_identity_consts
+      |> merge_concated_consts
+      |> remove_identity_identities
+      |> clean_identities
+      |> distribute_identities
+      |> maximally_factor_lens
+      |> separate_emptystring_consts
   in
-  
-  fold_until_fixpoint
-    (perform_cleanups
-     % split_consts_into_concats_rightfirst
-     % perform_cleanups
-     % split_consts_into_concats_leftfirst)
+  let rec cleanup_fix (l:Lens.t) : Lens.t =
+    let l1 = perform_cleanups l in
+    let l2 = split_consts_into_concats_rightfirst l1 in
+    let l3 = perform_cleanups l2 in
+    let l4 = split_consts_into_concats_leftfirst l3 in
+    if Poly.(l4 = l) then l4 else cleanup_fix l4
+  in
+  cleanup_fix
