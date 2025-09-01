@@ -26,7 +26,7 @@ open Bsyntax
 open Bident
 open Benv
 
-open Stdlib
+open Core
 open Optician 
 open Regexcontext
 open Lenscontext
@@ -67,9 +67,9 @@ let rec to_boomerang_lens
     ~union_f:(MLens.union i)
     ~compose_f:(MLens.compose i)
     ~iterate_f:(MLens.star i)
-    ~identity_f:((MLens.copy i) % (to_boomerang_regex rc))
+    ~identity_f:(fun r -> MLens.copy i (to_boomerang_regex rc r))
     ~inverse_f:(MLens.invert i)
-    ~permute_f:(fun il ml -> MLens.permute i (Permutation.to_int_list il) ml)
+    ~permute_f:(fun il ml -> MLens.permute i il ml)
     ~variable_f:(fun v ->
         to_boomerang_lens
           i
@@ -83,7 +83,7 @@ let populate_lens_context
   : Lenscontext.LensContext.t * RegexContext.t =
   let lens_list =
     List.filter_map
-      ~f:ident
+      ~f:Fn.id
       (CEnv.fold
          (fun _ (_,v) acc -> (Bvalue.get_l_safe v)::acc)
          e

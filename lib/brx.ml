@@ -1643,7 +1643,7 @@ let rec subregexp_list
      | Empty -> []
    end)
 
-open Stdlib
+open Core
 open Optician
 open Lang
 

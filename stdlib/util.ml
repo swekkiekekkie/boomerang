@@ -78,6 +78,8 @@ let thunk_of
   : 'a thunk =
   (fun _ -> x)
 
+let ident (x:'a) : 'a = x
+
 type comparison = int
 [@@deriving ord, show, hash]
 
@@ -389,7 +391,7 @@ let cons_if_some
 let filter_nones
     (l:('a option) list)
   : 'a list =
-  List.filter_map ~f:ident l
+  List.filter_map ~f:Fn.id l
 
 let option_to_empty_or_singleton
     (xo:'a option)
@@ -421,9 +423,9 @@ let swap_double ((x,y):'a * 'b) : 'b * 'a =
   (y,x)
 
 let time_action ~f:(f: unit -> 'a) : float * 'a =
-  let t1  = Unix.gettimeofday () in
+  let t1  = Core_unix.gettimeofday () in
   let res = f () in
-  let t2  = Unix.gettimeofday () in
+  let t2  = Core_unix.gettimeofday () in
   (t2 -. t1, res)
 
 let rec lookup (k:'a) (l:('a * 'b) list) : 'b option =
@@ -640,8 +642,8 @@ let rec sort_and_partition ~cmp:(f:'a -> 'a -> comparison) (l:'a list) : 'a list
   | _ ->
       let len = List.length l in
       let (l1, l2) = split_at_index_exn l (len/2) in
-      let sorted_partitioned_l1 = sort_and_partition f l1 in
-      let sorted_partitioned_l2 = sort_and_partition f l2 in
+      let sorted_partitioned_l1 = sort_and_partition ~cmp:f l1 in
+      let sorted_partitioned_l2 = sort_and_partition ~cmp:f l2 in
       merge_sorted_partitions sorted_partitioned_l1 sorted_partitioned_l2
   end
 
@@ -681,7 +683,7 @@ let sort_and_partition_with_indices (f:'a -> 'a -> comparison)
 
 
   let sorted = List.sort
-    ~cmp:(fun (x,_) (y,_) -> (f x y))
+    ~compare:(fun (x,_) (y,_) -> (f x y))
     (List.mapi ~f:(fun i x -> (x,i)) l) in
 
   begin match sorted with
@@ -705,8 +707,8 @@ let sort_and_partition_with_indices (f:'a -> 'a -> comparison)
 let ordered_partition_order (f:'a -> 'a -> comparison)
                             (l1:'a list) (l2:'a list)
                             : comparison =
-  let p1 = sort_and_partition f l1 in
-  let p2 = sort_and_partition f l2 in
+  let p1 = sort_and_partition ~cmp:f l1 in
+  let p2 = sort_and_partition ~cmp:f l2 in
   let cmp = compare_int (List.length p1) (List.length p2) in
   if (cmp = 0) then
     List.fold_left
@@ -873,8 +875,8 @@ let intersect_lose_order_no_dupes (cmp:'a -> 'a -> comparison)
     | (_,[]) -> []
     end
   in
-  let ordered_l1 = List.sort ~cmp:cmp l1 in
-  let ordered_l2 = List.sort ~cmp:cmp l2 in
+  let ordered_l1 = List.sort ~compare:cmp l1 in
+  let ordered_l2 = List.sort ~compare:cmp l2 in
   intersect_ordered ordered_l1 ordered_l2
 
 let set_minus_lose_order (cmp:'a -> 'a -> comparison)
@@ -894,8 +896,8 @@ let set_minus_lose_order (cmp:'a -> 'a -> comparison)
     | (_,[]) -> l1
     end
   in
-  let ordered_l1 = List.dedup (List.sort ~cmp:cmp l1) in
-  let ordered_l2 = List.dedup (List.sort ~cmp:cmp l2) in
+  let ordered_l1 = List.dedup_and_sort ~compare:cmp l1 in
+  let ordered_l2 = List.dedup_and_sort ~compare:cmp l2 in
   set_minus_ordered ordered_l1 ordered_l2
 
 let pairwise_maintain_invariant
@@ -931,7 +933,7 @@ let project_out_elements
     end
   in
   project_out_elements_internal
-    (List.sort ~cmp:Int.compare indices)
+    (List.sort ~compare:Int.compare indices)
     l
     0
 
@@ -1005,7 +1007,11 @@ let rec append_into_correct_list ((k,v):'a * 'b list) (l:('a * 'b list) list)
   end
 
 let group_by_values (l:('a list * 'b) list) : ('a list * 'b) list =
-  let empty_value_list = List.dedup (List.map ~f:(fun v -> (snd v,[])) l) in
+  let empty_value_list =
+    List.dedup_and_sort
+      ~compare:(fun (v1,_) (v2,_) -> compare v1 v2)
+      (List.map ~f:(fun v -> (snd v, ([] : 'a list))) l)
+  in
   let l' = List.fold_left
   ~f:(fun acc (k,v) ->
     append_into_correct_list (v,k) acc)
@@ -1015,7 +1021,11 @@ let group_by_values (l:('a list * 'b) list) : ('a list * 'b) list =
   List.map ~f:(fun (x,y) -> (y,x)) l'
 
 let group_by_keys (kvl:('a * 'b) list) : ('a * 'b list) list =
-  let empty_key_list = List.dedup (List.map ~f:(fun v -> (fst v,[])) kvl) in
+  let empty_key_list =
+    List.dedup_and_sort
+      ~compare:(fun (k1,_) (k2,_) -> compare k1 k2)
+      (List.map ~f:(fun v -> (fst v, ([] : 'b list))) kvl)
+  in
   List.fold_left
     ~f:(fun acc (k,v) ->
         insert_into_correct_list acc k v)

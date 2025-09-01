@@ -1,4 +1,4 @@
-open Stdlib
+open Core
 open Lenscontext
 open Converter
 open Regexcontext
@@ -10,8 +10,9 @@ open Consts
 open Synth_structs
 open Expand
 open Language_equivalences
+open Util
 
-module PQ = PriorityQueueOf(QueueElement)
+module PQ = My_priority_queue.PriorityQueueOf(QueueElement)
 
 module type LENS_SYNTHESIZER =
 sig
@@ -35,7 +36,7 @@ sig
   val push_all : queue -> element list -> queue
   val pop : queue -> (element * int * queue) option
   val length : queue -> int
-  val compare : queue -> queue -> comparison
+  val compare : queue -> queue -> Util.comparison
   val to_string : queue -> string
 end
 
@@ -81,11 +82,11 @@ struct
     let atom_lens_perm_part_list = List.concat atom_lens_perm_part_list_list in
     let atom_lens_perm_part_list_by_left_atom =
       List.sort
-        ~cmp:(fun (_,(x,_)) (_,(y,_)) -> compare x y)
+        ~compare:(fun (_,(x,_)) (_,(y,_)) -> compare x y)
         atom_lens_perm_part_list in
     let (atom_lenses,perm_parts) = List.unzip
         atom_lens_perm_part_list_by_left_atom in
-    (atom_lenses,Permutation.create_from_doubles_unsafe perm_parts,strs1,strs2)
+    (atom_lenses,Algebra.Permutation.create_from_doubles_unsafe perm_parts,strs1,strs2)
 
 
   and gen_dnf_lens_zipper_internal
@@ -107,11 +108,11 @@ struct
     let clause_lens_perm_part_list = List.concat clause_lens_perm_part_list_list in
     let clause_lens_perm_part_list_by_left_clause =
       List.sort
-        ~cmp:(fun (_,(x,_)) (_,(y,_)) -> compare x y)
+        ~compare:(fun (_,(x,_)) (_,(y,_)) -> compare x y)
         clause_lens_perm_part_list in
     let (clause_lenses,perm_parts) = List.unzip
         clause_lens_perm_part_list_by_left_clause in
-    (clause_lenses,Permutation.create_from_doubles_unsafe perm_parts)
+    (clause_lenses,Algebra.Permutation.create_from_doubles_unsafe perm_parts)
 
   let rigid_synth
       (rc:RegexContext.t)

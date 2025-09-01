@@ -1,0 +1,133 @@
+(rule
+ (targets sys.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lenses/sys.boom)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lenses/sys.boom))))
+
+(rule
+ (targets prefs.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lenses/prefs.boom)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lenses/prefs.boom))))
+
+(rule
+ (targets sort.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lenses/sort.boom)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lenses/sort.boom))))
+
+(rule
+ (targets list.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lenses/list.boom)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lenses/list.boom))))
+
+(rule
+ (targets prelude.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lenses/prelude.boom)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lenses/prelude.boom))))
+
+(rule
+ (targets core.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lenses/core.boom)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lenses/core.boom))))
+
+(rule
+ (targets bparser.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lib/bparser.srcy)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lib/bparser.srcy))))
+
+(rule
+ (targets blexer.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/lib/blexer.srcl)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/lib/blexer.srcl))))
+
+(rule
+ (targets alignment.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/examples/alignment.src)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/examples/alignment.src))))
+
+(rule
+ (targets QuickStart.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  %{workspace_root}/QuickStart.src)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} %{workspace_root}/QuickStart.src))))
+
+(rule
+ (targets main.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  main.src)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} main.src))))
+
+(rule
+ (alias docs)
+ (deps
+  (:< main.tex)
+  local.sty
+  main.bbl
+  src2tex.sty
+  syntax.sty
+  bcprules.sty
+  QuickStart.tex
+  alignment.tex
+  blexer.tex
+  bparser.tex
+  core.tex
+  prelude.tex
+  list.tex
+  sort.tex
+  prefs.tex
+  sys.tex
+  pdf/boomerang-logo.pdf
+  pdf/arch-basic.pdf)
+ (action
+  (run latexmk -pdf -f %{<})))

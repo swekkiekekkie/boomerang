@@ -1,21 +1,23 @@
-open Stdlib
+open Core
+open My_tree
+open Util
 
 (** To be an ordered metric space, we require the space to have a distance
   * metric (a function distance : X -> X -> double) and a total ordering (a function
   * compare : X -> X -> int) we do not require any meaningful interaction
   * between the metric and the ordering **)
-module TreeAlignmentOf(D : Data) =
+module TreeAlignmentOf(D : Util.Data) =
 struct
   type alignment_node =
     {
-      perm   : Permutation.t  ;
+      perm   : Algebra.Permutation.t  ;
       pleft  : int list       ;
       pright : int list       ;
     }
   [@@deriving ord, show, hash]
 
   let create_alignment_node
-      ~perm:(perm:Permutation.t)
+      ~perm:(perm:Algebra.Permutation.t)
       ~pleft:(pleft:int list)
       ~pright:(pright:int list)
     : alignment_node =
@@ -67,13 +69,13 @@ struct
     end
 
   module DataTree = UnorderedNonemptyTreeOf(D)
-  module DataTreeIndexListDict = DictOf(DataTree)(ListOf(IntModule))
+  module DataTreeIndexListDict = My_dict.DictOf(DataTree)(Util.ListOf(Util.IntModule))
   module PrioritiedDataTreePairs =
   struct
-    include TripleOf(DataTree)(DataTree)(FloatModule)
+    include Util.TripleOf(DataTree)(DataTree)(Util.FloatModule)
     let priority ((_,_,p):t) = p
   end
-  module DataTreeDataTreePriorityPQueue = PriorityQueueOf(PrioritiedDataTreePairs)
+  module DataTreeDataTreePriorityPQueue = My_priority_queue.PriorityQueueOf(PrioritiedDataTreePairs)
 
   let get_minimal_alignment
       (t1:D.t tree)
@@ -92,7 +94,7 @@ struct
         (Node(l1,t1s):D.t nonempty_tree)
         (Node(l2,t2s):D.t nonempty_tree)
       : alignment_node nonempty_tree option =
-      if (not (is_equal (D.compare l1 l2))) then
+      if (not (Util.is_equal (D.compare l1 l2))) then
         None
       else
         let list_to_dict
@@ -207,7 +209,7 @@ struct
         Some
           (Node
              (create_alignment_node
-                ~perm:(Permutation.create_from_doubles perm_doubles)
+                ~perm:(Algebra.Permutation.create_from_doubles perm_doubles)
                 ~pleft:pleft
                 ~pright:pright,
               alignments))

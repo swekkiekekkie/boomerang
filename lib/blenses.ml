@@ -21,6 +21,8 @@
 
 open Ubase
 open Hbase
+open Optician
+open Optician.Lang
        
 (* ---------------------------------------------------------------------------*)
 (* IMPORTS AND ABBREVIATIONS *)
@@ -1692,8 +1694,15 @@ module MLens = struct
     Arx.generic_iter (copy i Rx.epsilon) (union i) (concat i) (star i)
       min maxo dl1
 
-  open Stdlib
-  open Optician.Lang
+  open Core
+
+  let distribute_option (ls:'a option list) : 'a list option =
+    let rec loop acc = function
+      | [] -> Some (List.rev acc)
+      | None :: _ -> None
+      | Some x :: xs -> loop (x :: acc) xs
+    in
+    loop [] ls
 
   let rec to_optician_lens
       (l:t)

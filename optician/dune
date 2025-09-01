@@ -1,0 +1,6 @@
+(library
+ (name optician)
+ (preprocess
+  (pps ppx_deriving.std ppx_hash))
+ (synopsis "Bijective Lens Synthesis")
+ (libraries boomerang_stdlib))

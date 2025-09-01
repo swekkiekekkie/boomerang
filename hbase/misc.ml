@@ -230,7 +230,7 @@ let escape (escapeChar: char -> string) s =
             incr n;
           end done
       done;
-      s'
+      Bytes.unsafe_to_string s'
     end
   in
   debug(fun () -> Util.format "escape returns %s@\n" result);
@@ -244,7 +244,7 @@ let generic_escape_char escapedchars c =
     let str = Bytes.create 2 in
     Bytes.set str 0 '\\';
     Bytes.set str 1 c;
-    str
+    Bytes.unsafe_to_string str
   else
     "-"
 
@@ -266,15 +266,15 @@ let generic_unescape s =
       if i >= String.length s then
         ()
       else if s.[i] = '\\' then begin
-          Bytes.set s' i'  (Bytes.get s (i+1)); (* assumes that '\' always followed by a char *)
+          Bytes.set s' i'  (String.get s (i+1)); (* assumes that '\' always followed by a char *)
           loop (i + 2) (i' + 1)
         end else begin
-          Bytes.set s' i' (Bytes.get s i);
+          Bytes.set s' i' (String.get s i);
           loop (i + 1) (i' + 1)
       end
     in
     loop 0 0;
-    s'
+    Bytes.unsafe_to_string s'
 
 (* find c, skipping all the escaped characters, e.g., "\;" *)
 let rec index_rec_nonescape s i c = 
@@ -521,9 +521,9 @@ let rec remove_file_or_dir d =
 
 let read_chan chan =
   let nbytes = in_channel_length chan in
-  let string = Bytes.create nbytes in
-  really_input chan string 0 nbytes;
-  string
+  let bytes = Bytes.create nbytes in
+  really_input chan bytes 0 nbytes;
+  Bytes.unsafe_to_string bytes
 
 let read file =
   if file = "-" then

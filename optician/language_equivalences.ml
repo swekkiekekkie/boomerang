@@ -1,7 +1,7 @@
-open Stdlib
+open Core
 open Lang
 open Normalized_lang
-open Permutation
+open Util
 
 
 let rec to_dnf_regex (r:Regex.t) : dnf_regex =
@@ -31,7 +31,7 @@ and clause_lens_to_lens ((atoms,permutation,strings1,strings2):clause_lens)
   : Lens.t =
     let rec combine_scct_and_atom_lenses
             (atom_lenses:Lens.t list)
-            (scct:swap_concat_compose_tree)
+            (scct:Algebra.Permutation.swap_concat_compose_tree)
             : (Lens.t * Lens.t list) =
       begin match scct with
       | SCCTSwap (s1,s2) ->
@@ -73,7 +73,7 @@ and clause_lens_to_lens ((atoms,permutation,strings1,strings2):clause_lens)
     let (string1h,string1t) = split_by_first_exn strings1 in
     let (string2h,string2t) = split_by_first_exn strings2 in
     let (string2t_invperm) =
-      Permutation.apply_inverse_to_list_exn
+      Algebra.Permutation.apply_inverse_to_list_exn
         permutation
         string2t
     in
@@ -93,15 +93,12 @@ and clause_lens_to_lens ((atoms,permutation,strings1,strings2):clause_lens)
     | [] -> string_lss_hd
     | _ ->
       let permutation_scct =
-        Permutation.to_swap_concat_compose_tree permutation in
-      if has_compose permutation_scct then
-        Lens.LensConcat(string_lss_hd,
-                   Lens.LensPermute (permutation,atom_string_concats))
-      else
-        Lens.LensConcat(string_lss_hd,
-                   (fst (combine_scct_and_atom_lenses
-                           atom_string_concats
-                           permutation_scct)))
+        Algebra.Permutation.to_swap_concat_compose_tree permutation in
+      (* conservative: always go through SCCT; compose handled by structure *)
+      Lens.LensConcat(string_lss_hd,
+                 (fst (combine_scct_and_atom_lenses
+                         atom_string_concats
+                         permutation_scct)))
     end
 
 and dnf_lens_to_lens ((clauses,_):dnf_lens) : Lens.t =

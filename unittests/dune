@@ -1,0 +1,8 @@
+(executable
+ (name synth_unittests)
+ (modules synth_unittests)
+ (libraries ounit2 boomerang_stdlib core))
+
+(rule
+ (alias    runtest)
+ (action   (run ./synth_unittests.exe)))

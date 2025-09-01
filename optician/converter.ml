@@ -1,4 +1,4 @@
-open Stdlib
+open Core
 open Lang
 open Eval
 open Lens_put
@@ -6,6 +6,7 @@ open Normalized_lang
 open Regexcontext
 open Lenscontext
 open Consts
+open Util
 
 
 let rec clean_exampledness_atom
@@ -17,7 +18,7 @@ let rec clean_exampledness_atom
       let udef_choice_zip = List.zip_exn el cs in
       let actual_choices =
         List.filter
-          ~f:(fun (_,c) -> List.mem ~equal:(=) choices c)
+          ~f:(fun (_,c) -> List.mem ~equal:(List.equal Int.equal) choices c)
           udef_choice_zip
       in
       let (strs,cs) = List.unzip actual_choices in
@@ -26,7 +27,7 @@ let rec clean_exampledness_atom
       
       let actual_choices =
         List.filter
-          ~f:(fun ch -> List.mem ~equal:(=) choices ch)
+          ~f:(fun ch -> List.mem ~equal:(List.equal Int.equal) choices ch)
           cs
       in
       
@@ -38,7 +39,7 @@ and clean_exampledness_clause (above_choices:int list list)
   
   let actual_choices =
     List.filter
-      ~f:(fun ch -> List.mem ~equal:(=) above_choices ch)
+      ~f:(fun ch -> List.mem ~equal:(List.equal Int.equal) above_choices ch)
       current_choices
   in
   
@@ -54,7 +55,7 @@ and clean_exampledness_dnf_regex (above_choices:int list list)
   let rec is_suplist (lowerc:int list) (upperc:int list) : bool =
     begin match (lowerc,upperc) with
       | (h1::t1,h2::t2) ->
-        if h1 = h2 then
+        if Poly.(h1 = h2) then
           is_suplist t1 t2
         else
           false

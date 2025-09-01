@@ -1,0 +1,52 @@
+(ocamlyacc bparser)
+
+(ocamllex blexer)
+
+(rule
+ (targets bparser.mly)
+ (deps
+  (:< %{workspace_root}/tools/src2f.exe)
+  bparser.srcy)
+ (action
+  (run %{<} bparser.srcy %{targets})))
+
+(rule
+ (targets bparser.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  bparser.srcy)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} bparser.srcy))))
+
+(rule
+ (targets blexer.mll)
+ (deps
+  (:< %{workspace_root}/tools/src2f.exe)
+  blexer.srcl)
+ (action
+  (run %{<} blexer.srcl %{targets})))
+
+(rule
+ (targets blexer.tex)
+ (deps
+  (:< %{workspace_root}/tools/src2tex.exe)
+  blexer.srcl)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} blexer.srcl))))
+
+(rule
+ (targets bakery.ml)
+ (deps
+  (:< %{workspace_root}/hbase/baker.exe))
+ (action
+  (with-stdout-to
+   %{targets}
+   (run %{<} .boom ../../../lenses ../../../examples))))
+
+(library
+ (name bbase)
+ (libraries hbase ubase threads str optician))

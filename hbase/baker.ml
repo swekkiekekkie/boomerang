@@ -28,7 +28,7 @@ let go suffix l =
                       Hashtbl.replace 
                         srcs 
                         (Filename.chop_extension (Filename.basename f))
-                        (String.escaped buf)
+                        (String.escaped (Bytes.unsafe_to_string buf))
                   end;
                 loop rest
             | Unix.S_DIR -> 

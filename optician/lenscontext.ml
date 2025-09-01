@@ -1,13 +1,13 @@
-open Stdlib
+open Core
 open Lang
 
 (***** The main LensContext module {{{ *****)
 module LensContext = struct
-  module DefsD = DictOf(Id)(TripleOf(Lens)(Regex)(Regex))
+  module DefsD = My_dict.DictOf(Id)(Util.TripleOf(Lens)(Regex)(Regex))
 
-  module OutgoingD = DictOf(Id)(ListOf(PairOf(Lens)(Id)))
+  module OutgoingD = My_dict.DictOf(Id)(Util.ListOf(Util.PairOf(Lens)(Id)))
 
-  module DS = DisjointSetOf(Id)
+  module DS = My_disjoint_set.DisjointSetOf(Id)
 
   type t = { defs     : DefsD.t     ;
              outgoing : OutgoingD.t ;
@@ -92,7 +92,7 @@ module LensContext = struct
     let rec shortest_path_internal (accums:(Lens.t * Id.t) list) : Lens.t =
       let satisfying_path_option =
         List.find
-          ~f:(fun (_,n) -> n = regex2_name)
+          ~f:(fun (_,n) -> Poly.(n = regex2_name))
           accums
       in
       begin match satisfying_path_option with
@@ -116,9 +116,9 @@ module LensContext = struct
     in
     let regex1_rep = DS.find_representative lc.equivs regex1_name in
     let regex2_rep = DS.find_representative lc.equivs regex2_name in
-    if regex1_rep <> regex2_rep then
+    if not (Poly.(regex1_rep = regex2_rep)) then
       None
-    else if regex1_name = regex2_name then
+    else if Poly.(regex1_name = regex2_name) then
       Some (Lens.LensIdentity (Regex.RegExVariable regex1_name))
     else
       Some (shortest_path_internal (get_outgoing_edges outgoing regex1_name))
@@ -162,7 +162,7 @@ module LensContext = struct
       in
       begin match DefsD.lookup lc.defs (Id.Id x) with
         | Some (l',_,_) ->
-          if l = l' then
+          if Poly.(l = l') then
             x
           else
             fresh next

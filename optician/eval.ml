@@ -202,7 +202,7 @@ let rec eval_dfa (st:state) ((s,er,recombiners,is,so):data) :
         ~init:None
         state_string_list
   | QAccept ->
-      if s = "" then
+      if Poly.(s = "") then
         Some er
       else
         None
@@ -211,10 +211,9 @@ let rec eval_dfa (st:state) ((s,er,recombiners,is,so):data) :
 let fast_eval (c:RegexContext.t) (r:Regex.t) (s:string) : bool =
   let (dfa_start,_) = regex_to_dfa c r false in
   not
-    (Option.is_empty
-       (eval_dfa
-          !dfa_start
-          (s,(to_empty_exampled_regex r),[],[0],None)))
+    (match (eval_dfa !dfa_start (s,(to_empty_exampled_regex r),[],[0],None)) with
+     | None -> true
+     | Some _ -> false)
 
 let regex_to_exampled_regex (rc:RegexContext.t) (r:Regex.t) (es:string list)
                                  : exampled_regex option =

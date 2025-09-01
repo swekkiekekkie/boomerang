@@ -365,7 +365,7 @@ rule lex = parse
          basename := "f"
        else
          basename := (if   (String.length !wholename) >= 4
-                        & ((String.sub !wholename
+                        && ((String.sub !wholename
                               ((String.length !wholename) - 4) 4) = ".src")
                       then String.sub !wholename 0 
                              ((String.length !wholename) - 4)

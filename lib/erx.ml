@@ -32,7 +32,7 @@ type tag = string
 module TagMapPlus = Mapplus.Make(
   struct
     type t = tag
-    let compare (s1:tag) s2 = Pervasives.compare s1 s2
+    let compare (s1:tag) s2 = Stdlib.compare s1 s2
   end)
 module TM = TagMapPlus.Map
 module TS = TagMapPlus.KeySet

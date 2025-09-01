@@ -1,5 +1,6 @@
-open Stdlib
+open Core
 open Lang
+open Util
 
 module QueueElement = struct
   type t = 
@@ -49,7 +50,7 @@ module QueueElement = struct
   let compare
       (q1:t)
       (q2:t)
-    : comparison =
+    : Util.comparison =
     quint_compare
       Regex.compare
       Regex.compare

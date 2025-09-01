@@ -59,7 +59,7 @@ val zip_with_pad : 'a -> 'b -> 'a list -> 'b list -> ('a * 'b) list
 (** [zip_with_pad pad1 pad2 l1 l2] returns the list of pairs of elements taken from [l1] and [l2]. [padx] and [pady] are being used
     for missing values when one list is shorter than the other. *)
 
-val iter_with_sep : ('a -> unit) -> (unit -> 'b) -> 'a list -> unit
+val iter_with_sep : ('a -> unit) -> (unit -> unit) -> 'a list -> unit
 (** [iter_with_sep f fsep [x1;x2;...xn]] computes [f x1; fsep (); f x2; fsep (); ... ; f xn]. *)
 
 val rev_and_flatten : 'a list list -> 'a list

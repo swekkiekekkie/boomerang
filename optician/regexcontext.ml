@@ -1,10 +1,11 @@
-open Stdlib
+open Core
 open Lang
+open Util
 
 (***** The main RegexContext module {{{ *****)
 
 module RegexContext = struct
-  module D = DictOf(Id)(PairOf(Regex)(BoolModule))
+  module D = My_dict.DictOf(Id)(Util.PairOf(Regex)(Util.BoolModule))
   type t = D.t
   [@@deriving ord, show, hash]
 
@@ -26,7 +27,7 @@ module RegexContext = struct
       begin match lookup_everything rc name with
         | None -> D.insert rc name (r,is_abstract)
         | Some ra ->
-            if ra = (r,is_abstract) then
+            if Poly.(ra = (r,is_abstract)) then
               rc
             else
               failwith ((Id.show name) ^ " already exists in the context")

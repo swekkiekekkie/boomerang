@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 type entry =
   { mutable laps : float list
@@ -13,9 +13,9 @@ let record ~label ~action : 'a =
       Hashtbl.set data ~key:label ~data:entry; entry
   | Some v -> v
   in
-  let base = Unix.gettimeofday () in
+  let base = Core_unix.gettimeofday () in
   let ret = action () in
-  entry.laps <- (Unix.gettimeofday () -. base) :: entry.laps;
+  entry.laps <- (Core_unix.gettimeofday () -. base) :: entry.laps;
   ret
 
 let report (_:unit) : (string * (int * float)) list =
