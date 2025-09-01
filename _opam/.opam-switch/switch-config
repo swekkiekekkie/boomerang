@@ -1,0 +1,13 @@
+opam-version: "2.0"
+synopsis: "/home/simon/programming/mdt/mdt-tools/boomerang"
+opam-root: "/home/simon/.opam"
+invariant: [
+  "ocaml-base-compiler" {= "5.2.1"}
+]
+paths {
+  
+}
+variables {
+  user: "simon"
+  group: "simon"
+}

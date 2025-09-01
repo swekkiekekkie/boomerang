@@ -1,0 +1,5 @@
+(lang dune 3.17)
+(name boomerang)
+(version 1.0)
+(sections (lib .) (doc ../../doc/boomerang))
+(files (lib (META dune-package opam)) (doc (LICENSE)))

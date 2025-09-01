@@ -1,0 +1,18 @@
+opam-version: "2.0"
+compiler: ["ocaml-base-compiler.5.2.1"]
+roots: ["boomerang.1.0" "ocaml-base-compiler.5.2.1"]
+installed: [
+  "base-bigarray.base"
+  "base-domains.base"
+  "base-nnp.base"
+  "base-threads.base"
+  "base-unix.base"
+  "boomerang.1.0"
+  "host-arch-x86_64.1"
+  "host-system-other.1"
+  "ocaml.5.2.1"
+  "ocaml-base-compiler.5.2.1"
+  "ocaml-config.3"
+  "ocaml-options-vanilla.1"
+]
+pinned: "boomerang.1.0"

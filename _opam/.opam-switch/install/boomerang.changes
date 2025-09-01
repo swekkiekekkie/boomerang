@@ -1,0 +1,9 @@
+opam-version: "2.0"
+added: [
+  "doc/boomerang" {"D"}
+  "doc/boomerang/LICENSE" {"F:S26432T1756721508.73"}
+  "lib/boomerang" {"D"}
+  "lib/boomerang/META" {"F:S0T1756721508.73"}
+  "lib/boomerang/dune-package" {"F:S148T1756721508.73"}
+  "lib/boomerang/opam" {"F:S356T1756721508.73"}
+]

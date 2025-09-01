@@ -1,0 +1,12 @@
+opam-version: "2.0"
+maintainer: "jnfoster@cs.cornell.edu"
+authors: ["Nate Foster" "Benjamin C. Pierce"]
+license: "None"
+homepage: "https://github.com/boomerang-lang/boomerang"
+bug-reports: "https://github.com/boomerang-lang/boomerang"
+depends: ["ocaml"]
+build: ["dune" "build" "-p" name "-j" jobs]
+dev-repo: "https://github.com/boomerang-lang/boomerang"
+url {
+  src: "git+file:///home/simon/programming/mdt/mdt-tools/boomerang#HEAD"
+}
