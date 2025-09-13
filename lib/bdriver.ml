@@ -39,10 +39,14 @@ let msg = Util.format
 let parse_lexbuf lexbuf = 
   try Bparser.modl Blexer.main lexbuf with 
     | Parsing.Parse_error ->
+        let i = Blexer.info lexbuf in
+        let tok = Lexing.lexeme lexbuf in
+        let near = if tok = "" then "end of input" else Printf.sprintf "'%s'" tok in
         raise 
           (Error.Harmony_error 
-             (fun () -> msg "@[%s:@ syntax@ error@\n@]"
-                (Info.string_of_t (Blexer.info lexbuf))))
+             (fun () -> msg "@[%s:@ syntax@ error@ near@ %s@\n@]"
+                (Info.string_of_t i)
+                near))
 
 (* helper to check the name of a module *)
 let m_check n m_str ast =

@@ -36,13 +36,17 @@ let parse_uid s =
     Blexer.setup "identifier constant";
     let x = 
       try Bparser.uid Blexer.main lexbuf
-      with _ -> 
+      with Parsing.Parse_error -> 
+        let i = Blexer.info lexbuf in
+        let tok = Lexing.lexeme lexbuf in
+        let near = if tok = "" then "end of input" else Printf.sprintf "'%s'" tok in
         raise 
           (Error.Harmony_error
              (fun () -> 
-                msg "@[%s:@ syntax@ error@ in@ identifier@ %s.@]" 
-                  (Info.string_of_t (Blexer.info lexbuf))
-                  s)) in 
+                msg "@[%s:@ syntax@ error@ in@ identifier@ %s@ near@ %s.@]" 
+                  (Info.string_of_t i)
+                  s
+                  near)) in 
       Blexer.finish ();                    
       x
 
@@ -51,12 +55,17 @@ let parse_qid s =
     Blexer.setup "qualified identifier constant";
     let q =
       try Bparser.qid Blexer.main lexbuf
-      with _ -> raise
-        (Error.Harmony_error
-           (fun () ->
-              msg "@[%s:@ syntax@ error@ in@ qualified@ identifier@ %s.@]"
-                (Info.string_of_t (Blexer.info lexbuf))
-                s)) in
+      with Parsing.Parse_error ->
+        let i = Blexer.info lexbuf in
+        let tok = Lexing.lexeme lexbuf in
+        let near = if tok = "" then "end of input" else Printf.sprintf "'%s'" tok in
+        raise
+          (Error.Harmony_error
+             (fun () ->
+                msg "@[%s:@ syntax@ error@ in@ qualified@ identifier@ %s@ near@ %s.@]"
+                  (Info.string_of_t i)
+                  s
+                  near)) in
       Blexer.finish ();
       q
 
